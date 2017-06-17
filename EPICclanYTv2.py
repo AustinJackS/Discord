@@ -5,6 +5,7 @@ import time
 mods=["Anoxane#6032","EPICclanYT#4094"]
 magicball=["Certainly","Unclear","Unsure","My sources say yes","My sources say no","Roll again","Definitly not","Try again"]
 client=discord.Client()
+#all commands are defined below!
 @client.event
 async def on_message(message):
     #Check if any tempbans are due to be removed
