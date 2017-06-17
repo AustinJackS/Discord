@@ -8,8 +8,29 @@ client=discord.Client()
 @client.event
 async def on_message(message):
     #Check if any tempbans are due to be removed
+    f=open("temp.txt","r")#this is really broken
+    tempbans=f.read().split('\n')
+    f.close()
+    try:
+        tempbans.remove('')
+    except:
+        pass
+    for tmpban in tempbans:
+        if tmpban.split(',')[1]==time.strftime("%d/%m/%Y"):
+            #tempban is due to be removed :)
+            #debug line here 
+            member_to_unban = await client.get_user_info(tmpban.split(',')[0])
+            remove_member=tmpban
+            await client.unban(message.server, member_to_unban)
+            f.close()
+            #clean the file
+            f=open("temp.txt","w")
+            for line in tempbans:
+                if line!=tmpban:
+                    f.write(line)
+            await client.send_message(message.channel, "`A tempban has just been lifted :)`")
     if message.content.startswith("$hello"):
-        return await client.sned_message(message.channel, "Hello, world!")
+        return await client.send_message(message.channel, "Hello, world!")
     if message.content.startswith("$commands"):
         helpd="""
    ```
@@ -19,6 +40,7 @@ async def on_message(message):
 #    $dice - Rolls a die
 #    $EighBall - Does 8ball
 #    $range [min] [max] - Generates a random integer
+#    $mod [add/remove/promote/demote/tempban] [warning/(user)] (user)
     ``
     """
         await client.send_message(message.channel, helpd)
@@ -49,14 +71,14 @@ async def on_message(message):
         #below is how to get a user by name
         member_to_promote = discord.utils.find(lambda m: m.name == message.content.split(" ")[2], message.channel.server.members)
         roles=[
-        "325059740982050827",
-        "325060075657887745",
+        "322458329429573633",
+        "322448115590234112",
         ]
         #same thing with names here
         if str(message.author) in mods:
-            role = discord.utils.get(message.server.roles, name="test1")
+            role = discord.utils.get(message.server.roles, name="The Lava Squad")
             if role in member_to_promote.roles:
-                role = discord.utils.get(message.server.roles, name="test2")
+                role = discord.utils.get(message.server.roles, name="Trusted Person")
                 if role in member_to_promote.roles:
                     await client.send_message(message.channel, "User is the highest role promotion allows.")
                 else:
@@ -106,11 +128,37 @@ async def on_message(message):
                 await client.send_message(message.channel, "I don't have perms to remove roles.")  
     if message.content.startswith("$mod tempban"):
         if str(message.author) in mods:
-            day_to_remove=time.strftime("%d/%m/%Y")#need to add +5
+            day=str(int(time.strftime("%d"))+5)
+            day_to_remove=time.strftime(day+"/%m/%Y")#day/month/year
             member_to_tempban = discord.utils.find(lambda m: m.name == message.content.split(" ")[2], message.channel.server.members)
             f=open("temp.txt","a+")
-            f.write(message.content.split(" ")[2])
+            f.write("\n"+member_to_tempban.id+","+day_to_remove)
             f.close()
-            await client.ban(member_to_tempban)
-        
+            try:
+                await client.ban(member_to_tempban)
+                await client.send_message(message.channel, "User tempbanned until: "+day_to_remove)
+            except discord.errors.Forbidden:
+                await client.send_message(message.channel, "Your privledge is two low to ban this user.")
+    if message.content.startswith("$mod demote"):
+        notdemoted=True
+        #remember to replace with different role ids
+        #below is how to get a user by name
+        member_to_promote = discord.utils.find(lambda m: m.name == message.content.split(" ")[2], message.channel.server.members)
+        roles=[
+        "322458329429573633",
+        "322448115590234112",
+        ]
+        #same thing with names here
+        if str(message.author) in mods:
+            role = discord.utils.get(message.server.roles, name="Trusted Person")
+            if role in member_to_promote.roles:
+                await client.remove_roles(member_to_promote, role)
+                await client.send_message(message.channel, "Sucessfully demoted.")
+                notdemoted=False
+            role = discord.utils.get(message.server.roles, name="The Lava Squad")
+            if role in member_to_promote.roles and notdemoted:
+                await client.remove_roles(member_to_promote, role)
+                await client.send_message(message.channel, "Sucessfully demoted.")
+            elif notdemoted:
+                await client.send_message(message.channel, "Cannot demote member any more.")
 client.run("MzIzNDQzMDgxMTM3NjE4OTQ0.DB7NXA.tEzLxlE7NsJphl4uFlD5r_XD00g")
